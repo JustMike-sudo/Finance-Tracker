@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import useLedgerStore from '../store/useLedgerStore';
 import { PILLARS, CURRENCY } from '../utils/constants';
-import { calcVirtualBalance } from '../utils/calculations';
+import { calcVirtualBalance, calcNetSavingsGoal, calcWeeklyThreshold } from '../utils/calculations';
 import { getMonthKey, getMonthName } from '../utils/dateUtils';
 
 export default function BudgetPage() {
@@ -9,7 +9,6 @@ export default function BudgetPage() {
   const transactions = useLedgerStore((s) => s.transactions);
   const setMonthlySetup = useLedgerStore((s) => s.setMonthlySetup);
   const syncWalletAction = useLedgerStore((s) => s.syncWallet);
-  const walletBalance = useLedgerStore((s) => s.walletBalance);
   const lastWalletSync = useLedgerStore((s) => s.lastWalletSync);
 
   // Setup form state
@@ -28,22 +27,17 @@ export default function BudgetPage() {
   const [syncResult, setSyncResult] = useState(null);
 
   // Computed values
-  const pillarSum = Object.values(pillarAmounts).reduce((s, v) => s + (parseFloat(v) || 0), 0);
-  const netSavings = (parseFloat(totalCash) || 0) - (parseFloat(fixedCosts) || 0) - pillarSum;
-  const weeklyThreshold = pillarSum / 4;
+  const draftSetup = {
+    totalCashInFlow: parseFloat(totalCash) || 0,
+    fixedCosts: parseFloat(fixedCosts) || 0,
+    pillars: Object.fromEntries(PILLARS.map((p) => [p.id, parseFloat(pillarAmounts[p.id]) || 0])),
+  };
+  const netSavings = calcNetSavingsGoal(draftSetup);
+  const weeklyThreshold = calcWeeklyThreshold(draftSetup);
   const virtualBalance = calcVirtualBalance(monthlySetup, transactions);
 
   const handleSaveSetup = () => {
-    setMonthlySetup({
-      totalCashInFlow: parseFloat(totalCash) || 0,
-      fixedCosts: parseFloat(fixedCosts) || 0,
-      pillars: {
-        survival: parseFloat(pillarAmounts.survival) || 0,
-        optional: parseFloat(pillarAmounts.optional) || 0,
-        culture: parseFloat(pillarAmounts.culture) || 0,
-        extra: parseFloat(pillarAmounts.extra) || 0,
-      },
-    });
+    setMonthlySetup(draftSetup);
     setSetupSaved(true);
     setTimeout(() => setSetupSaved(false), 2000);
   };

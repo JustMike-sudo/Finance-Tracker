@@ -1,4 +1,4 @@
-export default function AlertBanner({ message, pillarColor }) {
+export default function AlertBanner({ message }) {
   return (
     <div className="alert-banner" style={{ borderColor: 'var(--danger)' }}>
       <span className="alert-icon">⚠</span>

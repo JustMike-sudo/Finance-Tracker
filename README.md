@@ -1,5 +1,7 @@
 # The Fusion Ledger
 
+**Live demo:** https://justmike-sudo.github.io/Finance-Tracker/
+
 **The Fusion Ledger** is a local-first, offline-capable web application designed to manage a 100% hard-cash economy based on the traditional Japanese **Kakeibo** budgeting method. It features a minimalist, dark-mode Japanese aesthetic and guarantees absolute data privacy by keeping all information securely stored on your local device.
 
 ---
@@ -27,13 +29,23 @@ A reflection module to review your monthly performance. Compares "Budgeted vs. A
 
 ---
 
+### 6. Works Offline & Installs Like an App
+A service worker caches the whole app (and its fonts after the first visit), so it opens with no connection. Use "Install" / "Add to Home Screen" in your browser to run it full-screen like a native app.
+
+### 7. Backup, Restore & CSV Export
+Because everything lives in your browser, the Vault has a **Backup & Export** panel: download a JSON backup, restore it on another device (files are validated and you confirm before anything is replaced), or export all transactions as CSV for a spreadsheet.
+
+---
+
 ## 🛠️ Technical Stack
 
-This project was built with a zero-dependency, modular philosophy. 
-- **Framework:** React 19 + Vite 6
-- **Routing:** React Router v7
+A small, modular stack with no UI or charting libraries.
+- **Framework:** React 19 + Vite 8
+- **Routing:** React Router v7 (hash routing, so deep links survive a refresh on static hosting)
 - **State Management:** Zustand (with `persist` middleware)
-- **Data Storage:** Browser `localStorage` (100% offline, zero cloud APIs)
+- **Data Storage:** Browser `localStorage` (no backend, no account)
+- **Offline:** `vite-plugin-pwa` (Workbox service worker + web app manifest)
+- **Testing:** Vitest
 - **Styling:** Vanilla CSS with CSS Custom Properties (No bulky CSS frameworks)
 - **Charts:** Pure SVG rendering (No charting libraries)
 - **Typography:** Google Fonts (Noto Sans JP, JetBrains Mono)
@@ -66,6 +78,12 @@ This project was built with a zero-dependency, modular philosophy.
 4. **Open in Browser:**
    Navigate to `http://localhost:5173` to start using The Fusion Ledger.
 
+### Test & Lint
+```bash
+npm test        # run the unit tests once
+npm run lint
+```
+
 ### Build for Production
 To generate a highly optimized production build:
 ```bash
@@ -81,10 +99,14 @@ The codebase is organized modularly to maintain separation of concerns:
 
 ```text
 src/
-├── components/          # Reusable UI components (NumPad, PillarCard, BarChart)
+├── components/          # Reusable UI components (NumPad, PillarCard, BarChart, BackupPanel)
 ├── pages/               # Main application views (Home, Budget, Insight, Vault)
 ├── store/               # Global state management via Zustand (useLedgerStore.js)
-├── utils/               # Pure functions for calculations, dates, and constants
+├── utils/               # Pure, tested functions
+│   ├── calculations.js  #   all budget maths (single source of truth)
+│   ├── amountInput.js   #   keypad input and amount formatting
+│   ├── backup.js        #   backup validation and CSV export
+│   └── dateUtils.js     #   month and week helpers
 ├── App.jsx              # React Router configuration
 ├── main.jsx             # React application entry point
 └── index.css            # Complete vanilla CSS design system and tokens
@@ -95,7 +117,7 @@ src/
 ## 🔒 Privacy & Security
 
 **The Fusion Ledger** operates entirely in your browser.
-- **No Cloud:** There are zero external API calls made to backend servers.
+- **No Cloud:** There is no backend and no account. Your financial data is never sent anywhere. (The only network request is loading the Google Fonts typefaces, which are then cached for offline use.)
 - **Local Persistence:** All setup configurations, transactions, and reflections are securely stringified and saved directly into your browser's `localStorage`.
 - **Data Ownership:** You maintain 100% ownership and control over your financial data at all times.
 

@@ -1,52 +1,49 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getMonthKey } from '../utils/dateUtils';
-
-const createEmptySetup = (monthKey) => ({
-  month: monthKey,
-  totalCashInFlow: 0,
-  fixedCosts: 0,
-  pillars: { survival: 0, optional: 0, culture: 0, extra: 0 },
-  netSavingsGoal: 0,
-  weeklyThreshold: 0,
-});
+import {
+  roundMoney,
+  calcNetSavingsGoal,
+  calcWeeklyThreshold,
+  calcVirtualBalance,
+  calcWalletMismatch,
+} from '../utils/calculations';
 
 const useLedgerStore = create(
   persist(
     (set, get) => ({
       // Monthly setup
       monthlySetup: null,
-      
+
       // Transactions for current month
       transactions: [],
-      
+
       // Wallet sync
       walletBalance: 0,
       lastWalletSync: null,
-      
+
       // Archives
       archives: {},
 
       // ─── Actions ───
-      
+
       setMonthlySetup: (setup) => {
-        const pillarSum = Object.values(setup.pillars).reduce((s, v) => s + v, 0);
-        const netSavingsGoal = setup.totalCashInFlow - setup.fixedCosts - pillarSum;
-        const weeklyThreshold = pillarSum / 4;
         set({
           monthlySetup: {
             ...setup,
             month: getMonthKey(),
-            netSavingsGoal: Math.max(0, netSavingsGoal),
-            weeklyThreshold,
+            netSavingsGoal: Math.max(0, calcNetSavingsGoal(setup)),
+            weeklyThreshold: calcWeeklyThreshold(setup),
           },
         });
       },
 
       addTransaction: (amount, pillar, label = '', isWalletMismatch = false) => {
+        const value = roundMoney(parseFloat(amount));
+        if (!Number.isFinite(value) || value <= 0) return;
         const tx = {
           id: crypto.randomUUID(),
-          amount: parseFloat(amount),
+          amount: value,
           pillar,
           timestamp: new Date().toISOString(),
           label,
@@ -56,39 +53,37 @@ const useLedgerStore = create(
       },
 
       syncWallet: (physicalCash) => {
-        const state = get();
-        const { monthlySetup, transactions } = state;
+        const { monthlySetup, transactions } = get();
         if (!monthlySetup) return 0;
-        
-        const totalSpent = transactions.reduce((sum, t) => sum + t.amount, 0);
-        const virtualBalance = monthlySetup.totalCashInFlow - monthlySetup.fixedCosts - totalSpent;
-        const mismatch = virtualBalance - physicalCash;
-        
+
+        const mismatch = calcWalletMismatch(calcVirtualBalance(monthlySetup, transactions), physicalCash);
+        const syncedAt = new Date().toISOString();
+
         if (mismatch > 0) {
           const tx = {
             id: crypto.randomUUID(),
-            amount: parseFloat(mismatch.toFixed(2)),
+            amount: mismatch,
             pillar: 'extra',
-            timestamp: new Date().toISOString(),
+            timestamp: syncedAt,
             label: 'Wallet Mismatch',
             isWalletMismatch: true,
           };
           set((state) => ({
             transactions: [tx, ...state.transactions],
             walletBalance: physicalCash,
-            lastWalletSync: new Date().toISOString(),
+            lastWalletSync: syncedAt,
           }));
           return mismatch;
         }
-        
-        set({ walletBalance: physicalCash, lastWalletSync: new Date().toISOString() });
+
+        set({ walletBalance: physicalCash, lastWalletSync: syncedAt });
         return 0;
       },
 
       lockMonth: (reflection) => {
         const state = get();
         const monthKey = state.monthlySetup?.month || getMonthKey();
-        
+
         set((state) => ({
           archives: {
             ...state.archives,
@@ -124,6 +119,17 @@ const useLedgerStore = create(
         set((state) => ({
           transactions: state.transactions.filter(t => t.id !== id),
         }));
+      },
+
+      // Replaces the whole ledger. Callers must pass data checked by parseBackup().
+      importData: (data) => {
+        set({
+          monthlySetup: data.monthlySetup,
+          transactions: data.transactions,
+          walletBalance: data.walletBalance,
+          lastWalletSync: data.lastWalletSync,
+          archives: data.archives,
+        });
       },
 
       // Selectors

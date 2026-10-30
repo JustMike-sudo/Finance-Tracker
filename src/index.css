@@ -1226,3 +1226,44 @@ button {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
 }
+
+/* Backup panel */
+.backup-note {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.backup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.backup-btn {
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  transition: background 0.2s ease;
+}
+
+.backup-btn:hover {
+  background: var(--bg-elevated);
+}
+
+.backup-message {
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.backup-message--ok {
+  color: var(--accent-survival);
+}
+
+.backup-message--error {
+  color: var(--danger);
+}
