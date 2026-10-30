@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import useLedgerStore from '../store/useLedgerStore';
-import { PILLARS, CURRENCY } from '../utils/constants';
+import { PILLARS } from '../utils/constants';
 import { calcPillarSpend } from '../utils/calculations';
-import { getMonthKey, getMonthName, isLastDayOfMonth } from '../utils/dateUtils';
+import { getMonthKey, getMonthName } from '../utils/dateUtils';
 import BarChart from '../components/BarChart';
+import BackupPanel from '../components/BackupPanel';
 
 export default function VaultPage() {
   const monthlySetup = useLedgerStore((s) => s.monthlySetup);
@@ -122,12 +123,7 @@ export default function VaultPage() {
             const isExpanded = expandedArchive === key;
             const archiveBudgeted = archive.setup?.pillars || {};
             const archiveActual = Object.fromEntries(
-              PILLARS.map((p) => [
-                p.id,
-                archive.transactions
-                  .filter((t) => t.pillar === p.id)
-                  .reduce((s, t) => s + t.amount, 0),
-              ])
+              PILLARS.map((p) => [p.id, calcPillarSpend(archive.transactions, p.id)])
             );
 
             return (
@@ -171,6 +167,8 @@ export default function VaultPage() {
           })}
         </section>
       )}
+
+      <BackupPanel />
     </div>
   );
 }

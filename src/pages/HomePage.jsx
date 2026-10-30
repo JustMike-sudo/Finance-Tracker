@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import useLedgerStore from '../store/useLedgerStore';
 import { PILLARS, CURRENCY } from '../utils/constants';
+import { appendKey, formatAmount } from '../utils/amountInput';
 import NumPad from '../components/NumPad';
 import PillarCard from '../components/PillarCard';
 import TransactionList from '../components/TransactionList';
@@ -11,15 +12,9 @@ export default function HomePage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const addTransaction = useLedgerStore((s) => s.addTransaction);
   const transactions = useLedgerStore((s) => s.transactions);
-  const monthlySetup = useLedgerStore((s) => s.monthlySetup);
 
   const handleInput = useCallback((digit) => {
-    setAmount((prev) => {
-      if (digit === '.' && prev.includes('.')) return prev;
-      if (prev === '0' && digit !== '.') return digit;
-      if (prev.includes('.') && prev.split('.')[1].length >= 2) return prev;
-      return prev + digit;
-    });
+    setAmount((prev) => appendKey(prev, digit));
   }, []);
 
   const handleBackspace = useCallback(() => {
@@ -37,7 +32,6 @@ export default function HomePage() {
     setSelectedPillar(null);
   }, [amount, selectedPillar, addTransaction]);
 
-  const displayAmount = amount || '0';
   const canConfirm = parseFloat(amount) > 0 && selectedPillar;
 
   return (
@@ -54,7 +48,7 @@ export default function HomePage() {
         <span className="amount-label">INPUT LEDGER</span>
         <span className="amount-value">
           <span className="amount-currency">{CURRENCY}</span>
-          {parseFloat(displayAmount).toLocaleString()}
+          {formatAmount(amount)}
         </span>
       </div>
 

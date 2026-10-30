@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PILLARS, CURRENCY } from '../utils/constants';
+import { PILLARS } from '../utils/constants';
 
 export default function BarChart({ budgeted, actual }) {
   const [animate, setAnimate] = useState(false);
